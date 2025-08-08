@@ -7,6 +7,20 @@
     <meta name="description" content="Word lid van onze voetbalclub! Trainingsprogramma's voor U6 tot U15 spelers. Opgericht september 2024." />
     <meta name="keywords" content="voetbalclub, jeugdvoetbal, voetbaltraining, U6, U8, U10, U12, U15" />
     <title>Voetbalclub - Word lid van ons team | U6 tot U15 Trainingsprogramma's</title>
+    <script type="module">
+      if (import.meta.env.MODE === 'production') {
+        const gtagScript = document.createElement('script')
+        gtagScript.async = true
+        gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-5ZLBNBNYBN'
+        document.head.appendChild(gtagScript)
+
+        window.dataLayer = window.dataLayer || []
+        function gtag(){ window.dataLayer.push(arguments) }
+        window.gtag = gtag
+        gtag('js', new Date())
+        gtag('config', 'G-5ZLBNBNYBN')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

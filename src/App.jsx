@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 function App() {
@@ -130,6 +130,24 @@ function App() {
     }
   }, [showSuccess])
 
+  // Track page views when switching between sections
+  const hasTrackedInitialPageViewRef = useRef(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      if (!hasTrackedInitialPageViewRef.current) {
+        // Skip first run, GA4 config in index.html already sends initial page_view
+        hasTrackedInitialPageViewRef.current = true
+        return
+      }
+      const pagePath = currentPage === 'webshop' ? '/webshop' : '/'
+      window.gtag('event', 'page_view', {
+        page_location: typeof window !== 'undefined' ? window.location.href : undefined,
+        page_title: typeof document !== 'undefined' ? document.title : undefined,
+        page_path: pagePath
+      })
+    }
+  }, [currentPage])
+
   const validateForm = () => {
     const errors = {}
     
@@ -147,7 +165,7 @@ function App() {
       errors.email = 'Voer een geldig e-mailadres in'
     }
     
-    if (formData.phone && !/^[\+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
+    if (formData.phone && !/^\+?[1-9]\d{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
       errors.phone = 'Voer een geldig telefoonnummer in'
     }
     
@@ -192,6 +210,11 @@ function App() {
     if (validateForm()) {
       // Simulate form submission
       setShowSuccess(true)
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('event', 'generate_lead', {
+          form_location: 'signup_section'
+        })
+      }
       setFormData({
         firstName: '',
         lastName: '',
@@ -213,6 +236,12 @@ function App() {
       ...prev,
       category: categoryId
     }))
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'select_content', {
+        content_type: 'age_category',
+        item_id: categoryId
+      })
+    }
     
     // Scroll to signup form
     document.getElementById('signup').scrollIntoView({ behavior: 'smooth' })
@@ -224,10 +253,24 @@ function App() {
 
   const addToCart = (product) => {
     setCart(prev => [...prev, { ...product, quantity: 1 }])
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'add_to_cart', {
+        currency: 'EUR',
+        value: product.price,
+        items: [
+          { id: product.id, name: product.name, category: product.category, price: product.price }
+        ]
+      })
+    }
   }
 
   const removeFromCart = (productId) => {
     setCart(prev => prev.filter(item => item.id !== productId))
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'remove_from_cart', {
+        items: [ { id: productId } ]
+      })
+    }
   }
 
   const updateQuantity = (productId, quantity) => {
@@ -238,6 +281,11 @@ function App() {
     setCart(prev => prev.map(item => 
       item.id === productId ? { ...item, quantity } : item
     ))
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'view_cart', {
+        items: cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price }))
+      })
+    }
   }
 
   const getCartTotal = () => {
@@ -524,7 +572,20 @@ function App() {
             </div>
             <div className="cart-summary-total">
               <h3>Totaal: €{getCartTotal().toFixed(2)}</h3>
-              <button className="checkout-button">Afrekenen</button>
+              <button
+                className="checkout-button"
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.gtag) {
+                    window.gtag('event', 'begin_checkout', {
+                      currency: 'EUR',
+                      value: getCartTotal(),
+                      items: cart.map(item => ({ id: item.id, name: item.name, quantity: item.quantity, price: item.price }))
+                    })
+                  }
+                }}
+              >
+                Afrekenen
+              </button>
             </div>
           </div>
         </section>
@@ -534,6 +595,7 @@ function App() {
 
   return (
     <div className="app">
+      {/* analytics handled via useEffect */}
       {/* Success Message */}
       {showSuccess && (
         <div className="success-message">
