@@ -17,6 +17,19 @@ function App() {
     category: ''
   })
 
+  // Analytics helpers and form tracking refs
+  const gtagEvent = (name, params = {}) => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', name, params)
+    }
+  }
+
+  const hasTrackedInitialPageViewRef = useRef(false)
+  const formStartedRef = useRef(false)
+  const formStartTimeRef = useRef(null)
+  const formSubmittedRef = useRef(false)
+  const touchedFieldsRef = useRef(new Set())
+
   const ageCategories = [
     { id: 'U6', name: 'U6 (4-5 jaar)', description: 'Introductie tot voetbal met leuke spelletjes en basisvaardigheden', maxAge: 5, minAge: 4 },
     { id: 'U8', name: 'U8 (6-7 jaar)', description: 'Leren van fundamentele technieken en teamspel', maxAge: 7, minAge: 6 },
@@ -131,7 +144,6 @@ function App() {
   }, [showSuccess])
 
   // Track page views when switching between sections
-  const hasTrackedInitialPageViewRef = useRef(false)
   useEffect(() => {
     if (typeof window !== 'undefined' && window.gtag) {
       if (!hasTrackedInitialPageViewRef.current) {
@@ -148,33 +160,58 @@ function App() {
     }
   }, [currentPage])
 
-  const validateForm = () => {
+  // Track button clicks globally
+  useEffect(() => {
+    const handleButtonClick = (e) => {
+      const target = e.target.closest('button, .cta-button, .mobile-menu-button, nav a, .add-to-cart-button, .remove-item-button, .checkout-button')
+      if (!target) return
+      const label = (target.innerText || target.getAttribute('aria-label') || 'button').trim().slice(0, 80)
+      gtagEvent('button_click', {
+        label,
+        page: currentPage
+      })
+    }
+    document.addEventListener('click', handleButtonClick)
+    return () => document.removeEventListener('click', handleButtonClick)
+  }, [currentPage])
+
+  // Track form abandon on page unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (formStartedRef.current && !formSubmittedRef.current) {
+        const durationMs = formStartTimeRef.current ? Date.now() - formStartTimeRef.current : undefined
+        gtagEvent('form_abandon', {
+          form_name: 'signup',
+          duration_ms: durationMs,
+          fields_touched: Array.from(touchedFieldsRef.current)
+        })
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
+
+  const getFormErrors = () => {
     const errors = {}
-    
     if (!formData.firstName.trim()) {
       errors.firstName = 'Voornaam is verplicht'
     }
-    
     if (!formData.lastName.trim()) {
       errors.lastName = 'Achternaam is verplicht'
     }
-    
     if (!formData.email.trim()) {
       errors.email = 'E-mail is verplicht'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Voer een geldig e-mailadres in'
     }
-    
     if (formData.phone && !/^\+?[1-9]\d{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
       errors.phone = 'Voer een geldig telefoonnummer in'
     }
-    
     if (!formData.age) {
       errors.age = 'Leeftijd is verplicht'
     } else if (formData.age < 4 || formData.age > 14) {
       errors.age = 'Leeftijd moet tussen 4 en 14 jaar zijn'
     }
-    
     if (!formData.category) {
       errors.category = 'Selecteer een categorie'
     } else {
@@ -183,7 +220,11 @@ function App() {
         errors.category = `Leeftijd ${formData.age} komt niet overeen met de geselecteerde categorie (${selectedCat.minAge}-${selectedCat.maxAge} jaar)`
       }
     }
-    
+    return errors
+  }
+
+  const validateForm = () => {
+    const errors = getFormErrors()
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -194,6 +235,13 @@ function App() {
       ...prev,
       [name]: value
     }))
+    // Mark form as started and track first interaction
+    if (!formStartedRef.current) {
+      formStartedRef.current = true
+      formStartTimeRef.current = Date.now()
+      gtagEvent('form_start', { form_name: 'signup' })
+    }
+    touchedFieldsRef.current.add(name)
     
     // Clear error when user starts typing
     if (formErrors[name]) {
@@ -207,14 +255,22 @@ function App() {
   const handleSubmit = (e) => {
     e.preventDefault()
     
-    if (validateForm()) {
+    const errors = getFormErrors()
+    setFormErrors(errors)
+    const isValid = Object.keys(errors).length === 0
+
+    gtagEvent('form_submit_attempt', {
+      form_name: 'signup',
+      errors_count: Object.keys(errors).length
+    })
+
+    if (isValid) {
       // Simulate form submission
       setShowSuccess(true)
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('event', 'generate_lead', {
-          form_location: 'signup_section'
-        })
-      }
+      formSubmittedRef.current = true
+      const durationMs = formStartTimeRef.current ? Date.now() - formStartTimeRef.current : undefined
+      gtagEvent('generate_lead', { form_location: 'signup_section' })
+      gtagEvent('form_submit', { form_name: 'signup', duration_ms: durationMs })
       setFormData({
         firstName: '',
         lastName: '',
@@ -224,9 +280,18 @@ function App() {
         category: ''
       })
       setSelectedCategory('')
+      formStartedRef.current = false
+      formStartTimeRef.current = null
+      touchedFieldsRef.current = new Set()
       
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      gtagEvent('form_submit_error', {
+        form_name: 'signup',
+        errors_count: Object.keys(errors).length,
+        error_fields: Object.keys(errors)
+      })
     }
   }
 
