@@ -1,4 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
+import tshirtImg from './assets/images/tshirt.png'
+import pantsImg from './assets/images/pants.png'
+import socksImg from './assets/images/socks.png'
+import jacketImg from './assets/images/jacket.png'
+import peutieLogo from './assets/images/peutieLogo.png'
 import './App.css'
 
 function App() {
@@ -44,7 +49,7 @@ function App() {
       name: 'Club Shirt',
       description: 'Officieel club shirt met club logo',
       price: 45.00,
-      image: '👕',
+      image: tshirtImg,
       category: 'kleding',
       sizes: ['XS', 'S', 'M', 'L', 'XL'],
       colors: ['Geel', 'Zwart']
@@ -54,7 +59,7 @@ function App() {
       name: 'Club Shorts',
       description: 'Comfortabele club shorts voor training en wedstrijden',
       price: 25.00,
-      image: '🩳',
+      image: pantsImg,
       category: 'kleding',
       sizes: ['XS', 'S', 'M', 'L', 'XL'],
       colors: ['Zwart']
@@ -64,60 +69,20 @@ function App() {
       name: 'Club Socks',
       description: 'Officiële club sokken met club kleuren',
       price: 12.00,
-      image: '🧦',
+      image: socksImg,
       category: 'kleding',
       sizes: ['S', 'M', 'L'],
       colors: ['Geel', 'Zwart']
-    },
-    {
-      id: 4,
-      name: 'Football Boots',
-      description: 'Professionele voetbalschoenen voor alle ondergronden',
-      price: 89.00,
-      image: '👟',
-      category: 'schoenen',
-      sizes: ['28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44'],
-      colors: ['Zwart', 'Wit']
-    },
-    {
-      id: 5,
-      name: 'Training Ball',
-      description: 'Officiële trainingsbal met club logo',
-      price: 35.00,
-      image: '⚽',
-      category: 'uitrusting',
-      sizes: ['Size 3', 'Size 4', 'Size 5'],
-      colors: ['Wit/Zwart']
-    },
-    {
-      id: 6,
-      name: 'Shin Guards',
-      description: 'Beschermende scheenbeschermers',
-      price: 18.00,
-      image: '🛡️',
-      category: 'uitrusting',
-      sizes: ['XS', 'S', 'M', 'L'],
-      colors: ['Zwart']
     },
     {
       id: 7,
       name: 'Club Jacket',
       description: 'Warme club jas voor koude dagen',
       price: 65.00,
-      image: '🧥',
+      image: jacketImg,
       category: 'kleding',
       sizes: ['S', 'M', 'L', 'XL'],
       colors: ['Zwart', 'Grijs']
-    },
-    {
-      id: 8,
-      name: 'Goalkeeper Gloves',
-      description: 'Professionele keeper handschoenen',
-      price: 42.00,
-      image: '🧤',
-      category: 'uitrusting',
-      sizes: ['6', '7', '8', '9', '10', '11'],
-      colors: ['Zwart', 'Geel']
     }
   ]
 
@@ -417,7 +382,7 @@ function App() {
       <section id="signup" className="signup">
         <div className="container">
           <h2>Inschrijven voor Training</h2>
-          <p className="section-subtitle">Word vandaag nog lid van onze voetbalclub!</p>
+          <p className="section-subtitle">Word vandaag nog lid van Peutie F.C.!</p>
           
           <form className="signup-form" onSubmit={handleSubmit}>
             <div className="form-row">
@@ -524,7 +489,7 @@ function App() {
           <div className="contact-info">
             <div className="contact-item">
               <h3><span className="icon-email"></span> E-mail</h3>
-              <p>info@voetbalclub.com</p>
+              <p>info@peutiefc.com</p>
             </div>
             <div className="contact-item">
               <h3><span className="icon-phone"></span> Telefoon</h3>
@@ -568,7 +533,11 @@ function App() {
             {products.map((product) => (
               <div key={product.id} className="product-card">
                 <div className="product-image">
-                  <span className="product-emoji">{product.image}</span>
+                  {typeof product.image === 'string' && /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(product.image) ? (
+                    <img src={product.image} alt={product.name} />
+                  ) : (
+                    <span className="product-emoji">{product.image}</span>
+                  )}
                 </div>
                 <div className="product-info">
                   <h3>{product.name}</h3>
@@ -612,7 +581,11 @@ function App() {
               {cart.map((item) => (
                 <div key={item.id} className="cart-item">
                   <div className="cart-item-image">
-                    <span className="product-emoji">{item.image}</span>
+                    {typeof item.image === 'string' && /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(item.image) ? (
+                      <img src={item.image} alt={item.name} />
+                    ) : (
+                      <span className="product-emoji">{item.image}</span>
+                    )}
                   </div>
                   <div className="cart-item-info">
                     <h4>{item.name}</h4>
@@ -675,8 +648,11 @@ function App() {
       <header className="header">
         <div className="container">
           <div className="logo">
-            <h1><span className="icon-soccer"></span> Voetbalclub</h1>
-            <p>Opgericht september 2024</p>
+            <img src={peutieLogo} alt="Peutie FC" className="club-logo" />
+            <div>
+              <h1>Peutie F.C.</h1>
+              <p>Opgericht september 2024</p>
+            </div>
           </div>
           <nav className={`nav ${mobileMenuOpen ? 'nav-open' : ''}`}>
             <a href="#" onClick={() => { setCurrentPage('home'); setMobileMenuOpen(false); }}>Home</a>
@@ -701,7 +677,7 @@ function App() {
       {/* Footer */}
       <footer className="footer">
         <div className="container">
-          <p>&copy; 2024 Voetbalclub. Opgericht september 2024. Alle rechten voorbehouden.</p>
+          <p>&copy; 2024 Peutie F.C. Opgericht september 2024. Alle rechten voorbehouden.</p>
         </div>
       </footer>
     </div>
